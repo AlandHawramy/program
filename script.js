@@ -11,7 +11,7 @@ const SESSION_STORAGE_USER = `currentUser_${APP_VERSION}`;
 
 // Predefined users and passwords. In a real app, this should NOT be in the frontend code.
 const USERS = {
-    qazi: { password: '123', displayName: 'ناوشار' },
+    qazi: { password: ['123', 'aland', 'bawar', '١٢٣' , '٩٩٩', '999'], displayName: 'ئەدمینیسەیتەر' },
    
     
 };
@@ -127,7 +127,7 @@ function globalCompetitionState() {
         // 2. Login Handler
         handleLogin() {
             const user = USERS[this.selectedUser];
-            if (user && user.password === this.passwordInput) {
+           if (user && user.password.includes(this.passwordInput)) {
                 this.loginError = '';
                 this.passwordInput = '';
                 this.currentUser = this.selectedUser;
