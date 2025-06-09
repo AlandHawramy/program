@@ -11,7 +11,7 @@ const SESSION_STORAGE_USER = `currentUser_${APP_VERSION}`;
 
 // Predefined users and passwords. In a real app, this should NOT be in the frontend code.
 const USERS = {
-    nawshar: { password: '123', displayName: 'ناوشار' },
+    qazi: { password: '123', displayName: 'ناوشار' },
     qlyasan: { password: '1234', displayName: 'قلیاسان' },
     cwrchra: { password: '12345', displayName: 'چوارچرا' },
     qauwan: { password: '123456', displayName: 'قەیوان' }
