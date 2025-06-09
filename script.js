@@ -12,9 +12,7 @@ const SESSION_STORAGE_USER = `currentUser_${APP_VERSION}`;
 // Predefined users and passwords. In a real app, this should NOT be in the frontend code.
 const USERS = {
     qazi: { password: '123', displayName: 'ناوشار' },
-    qlyasan: { password: '1234', displayName: 'قلیاسان' },
-    cwrchra: { password: '12345', displayName: 'چوارچرا' },
-    qauwan: { password: '123456', displayName: 'قەیوان' }
+   
     
 };
 
@@ -173,7 +171,7 @@ function globalCompetitionState() {
             this.setActiveTab(localStorage.getItem(this.getStorageKey(BASE_LS_ACTIVE_TAB)) || 'dashboard');
             
             const storedParticipants = localStorage.getItem(this.getStorageKey(BASE_LS_PARTICIPANTS));
-            this.participants = storedParticipants ? JSON.parse(storedParticipants) : [{ id: 1, name: 'نموونە: ئاکام کاکەبرا' }, { id: 2, name: 'نموونە: ئەلەند ' }];
+            this.participants = storedParticipants ? JSON.parse(storedParticipants) : [];
 
             const storedCompetitionData = localStorage.getItem(this.getStorageKey(BASE_LS_COMP_DATA));
             this.competitionData = storedCompetitionData ? JSON.parse(storedCompetitionData) : [];
