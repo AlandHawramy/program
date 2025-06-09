@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبۆردی پڕۆگرام</title>
+    <!-- CSS Link -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Libraries -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+</head>
+<body x-data="Alpine.store('app')" x-init="initApp()" class="kurdish-pattern-bg">
+
+    <!-- Login Screen -->
+    <div x-show="!isAuthenticated" x-cloak class="login-screen">
+        <div class="login-container">
+            <div class="login-logo-frame">
+                <img src="https://play-lh.googleusercontent.com/t_4WaYgkx2QOLgAJY-dNN29HBQ0XpLLicso8UZKgX7-FH5_t5F7ZbYVYkcCDM9Q1pBE=w240-h480-rw" alt="Logo" class="login-logo-image">
+            </div>
+            <h2 class="login-title">چوونەژوورەوەی بەڕێوەبەر</h2>
+            <p class="login-subtitle">تکایە بەکارهێنەر و وشەی نهێنی داخڵ بکە.</p>
+
+            <form @submit.prevent="handleLogin()" class="login-form">
+                <div class="mb-4">
+                    <label for="username" class="form-label">بەکارهێنەر</label>
+                    <select id="username" x-model="selectedUser" class="form-select">
+                        <template x-for="user in Object.keys(USERS)" :key="user">
+                            <option :value="user" x-text="USERS[user].displayName"></option>
+                        </template>
+                    </select>
+                </div>
+                <!-- کۆدی نوێ -->
+<div class="mb-4">
+    <label for="password" class="form-label">وشەی نهێنی</label>
+    <div class="password-input-wrapper">
+        <input 
+            :type="passwordVisible ? 'text' : 'password'" 
+            id="password" 
+            x-model="passwordInput" 
+            class="form-input password-input-with-icon" 
+            placeholder="وشەی نهێنی..." 
+            required>
+        <button type="button" @click.prevent="passwordVisible = !passwordVisible" class="password-toggle-icon">
+            <!-- ئایکۆنی چاوی کراوە (بۆ شاردنەوە) -->
+            <svg x-show="passwordVisible" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639l4.43-4.43a1.012 1.012 0 011.431 0l4.43 4.43a1.012 1.012 0 010 .639l-4.43 4.43a1.012 1.012 0 01-1.431 0l-4.43-4.43z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <!-- ئایکۆنی چاوی داخراو (بۆ پیشاندان) -->
+            <svg x-show="!passwordVisible" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" />
+            </svg>
+        </button>
+    </div>
+</div>
+                
+                <p x-show="loginError" x-text="loginError" class="login-error-message" x-transition></p>
+
+                <div class="mt-6">
+                    <button type="submit" class="action-button-elegant w-full justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+                        چوونەژوورەوە
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application (Dashboard) -->
+    <div x-show="isAuthenticated" x-cloak class="main-app-container">
+        <div class="mobile-header-buttons md:hidden">
+            <button @click="mobileMenuOpen = !mobileMenuOpen" class="mobile-menu-button">
+                <svg x-show="!mobileMenuOpen" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                <svg x-show="mobileMenuOpen" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+
+        <div class="main-container">
+            <div @click="mobileMenuOpen = false" class="mobile-overlay md:hidden" :class="{'open': mobileMenuOpen}" x-cloak></div>
+            <nav class="sidebar" :class="{'open': mobileMenuOpen}">
+                <div class="text-center mb-6">
+                    <div class="user-image-frame"> <img src="https://play-lh.googleusercontent.com/t_4WaYgkx2QOLgAJY-dNN29HBQ0XpLLicso8UZKgX7-FH5_t5F7ZbYVYkcCDM9Q1pBE=w240-h480-rw" alt="Logo" class="user-image"> </div>
+                    <h3 class="font-semibold text-base user-name mt-2" x-text="`پڕۆگرام - ${currentUserDisplayName}`">پڕۆگـــــرام</h3>
+                </div>
+                <ul class="flex-grow pr-1 space-y-1">
+                    <li><a @click="setActiveTab('dashboard')" href="#" class="sidebar-link" :class="{ 'active': activeTab === 'dashboard' }"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>داشبۆرد</a></li>
+                    <li><a @click="setActiveTab('participants')" href="#" class="sidebar-link" :class="{ 'active': activeTab === 'participants' }"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>بەشداربوان</a></li>
+                    <li><a @click="setActiveTab('book_management')" href="#" class="sidebar-link" :class="{ 'active': activeTab === 'book_management' }"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>ناوی کتێب</a></li>
+                    <li><a @click="setActiveTab('book_category_points')" href="#" class="sidebar-link" :class="{ 'active': activeTab === 'book_category_points' }"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" /></svg>پۆینتی پۆلی کتێب</a></li>
+                    <li><a @click="setActiveTab('final_results_summary')" href="#" class="sidebar-link" :class="{ 'active': activeTab === 'final_results_summary' }"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 0121 11.25v7.5" /></svg>ئەنجامی کۆتایی (بڕ)</a></li>
+                    <template x-for="activityKey in Object.keys(activityDetails)" :key="activityKey">
+                         <li><a @click="setActiveTab('activity_' + activityKey)" href="#" class="sidebar-link" :class="{ 'active': activeTab === 'activity_' + activityKey }"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.324h5.383c.493 0 .704.658.336.971l-4.25 3.505a.563.563 0 00-.168.57l1.558 4.835c.144.448-.343.83-.743.549L12 16.01l-4.13 3.072c-.4.3-.887-.101-.743-.549l1.558-4.835a.563.563 0 00-.168-.57l-4.25-3.505c-.368-.313-.157-.971.336-.971h5.383a.563.563 0 00.475-.324L11.48 3.5z" /></svg><span x-text="activityDetails[activityKey].nameKurdish"></span></a></li>
+                    </template>
+                    <li class="mt-4 pt-4 border-t" :style="{borderColor: 'var(--theme-border-light)'}"><span class="px-3 text-xs font-semibold uppercase tracking-wider" :style="{color: 'var(--theme-text-secondary)'}">بەڕێوەبردنی داتا</span></li>
+                    <li><button @click="downloadData()" class="sidebar-link w-full text-right"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>دابەزاندنی داتا (JSON)</button></li>
+                    <li><label class="sidebar-link w-full text-right cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>بارکردنی داتا (JSON)<input type="file" @change="uploadData($event)" accept=".json,application/json,*/*" class="hidden"></label></li>
+                    <li><a @click="setActiveTab('developer')" href="#" class="sidebar-link" :class="{ 'active': activeTab === 'developer' }"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>گەشە پێدەر</a></li>
+                    
+                    <!-- Logout Button -->
+                    <li class="mt-auto pt-4 border-t" :style="{borderColor: 'var(--theme-border-strong)'}">
+                        <button @click="handleLogout()" class="sidebar-link w-full text-right" style="color: var(--theme-text-danger);">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m-3 0l-3-3m0 0l-3 3m-3-3H9" /></svg>
+                            چوونەدەرەوە
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            <main class="content-area">
+                <!-- Dashboard Section -->
+                <div x-show="activeTab === 'dashboard'" x-cloak x-data="dashboardManager()" id="dashboard-content">
+                    <h2 class="section-title-refined">داشبۆردی سەرەکی پێشبڕکێ</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 dashboard-attribute-grid">
+                        <div class="attribute-box"> <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg> <div class="attribute-title">کۆی بەشداربووان</div> <div class="attribute-text" x-text="participants.length"></div> </div>
+                        <template x-for="(participant, index) in topThreeParticipants" :key="participant.participantId">
+                            <div class="attribute-box">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-4.5A3.375 3.375 0 0012.75 9.75H11.25A3.375 3.375 0 007.5 13.125V18.75m9 0h-9" />
+                                    <text x="12" y="18" font-size="10" text-anchor="middle" fill="currentColor" x-text="index + 1"></text>
+                                </svg>
+                                <div class="attribute-title" x-text="`پلەی ${['یەکەم', 'دووەم', 'سێیەم'][index]}`"></div>
+                                <div class="attribute-text text-sm" x-text="participant.participantName"></div>
+                                <div class="attribute-text text-xs" x-text="`${participant.totalPoints} خاڵ`" :style="{color: 'var(--theme-text-secondary)'}"></div>
+                            </div>
+                        </template>
+                         <div class="attribute-box" x-show="topThreeParticipants.length < 1 && participants.length > 0"> <div class="attribute-title">پلەی یەکەم</div> <div class="attribute-text">-</div> </div>
+                         <div class="attribute-box" x-show="topThreeParticipants.length < 2 && participants.length > 0"> <div class="attribute-title">پلەی دووەم</div> <div class="attribute-text">-</div> </div>
+                         <div class="attribute-box" x-show="topThreeParticipants.length < 3 && participants.length > 0"> <div class="attribute-title">پلەی سێیەم</div> <div class="attribute-text">-</div> </div>
+                    </div>
+                    <div class="mb-6 text-center">
+                         <button @click="exportParticipantPointsToExcel()" class="action-button-elegant">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-9 6h.44a2.25 2.25 0 012.24 2.092l.716 3.583a2.25 2.25 0 002.233 2.077h3.675a2.25 2.25 0 002.233-2.077l.716-3.583a2.25 2.25 0 012.24-2.092H19.5" /></svg>
+                             دابەزاندن (خاڵی بەشداربووان - Excel)
+                         </button>
+                    </div>
+                    <h3 class="activity-title">کۆی خاڵەکانی بەشداربووان</h3>
+                    <div id="participant-points-table-container" class="table-container-mobile rounded-md border shadow-sm mb-6" :style="{ backgroundColor: 'var(--theme-bg-content)', borderColor: 'var(--theme-border-light)' }">
+                        <table class="styled-table">
+                            <thead> <tr> <th>ناوی بەشداربوو</th> <template x-for="actKey in Object.keys(activityDetails)" :key="actKey"> <th x-text="activityDetails[actKey].nameKurdish"></th> </template> <th>کۆی گشتی خاڵەکان</th> </tr> </thead>
+                            <tbody>
+                                <template x-for="participantData in sortedParticipantsForDashboard" :key="participantData.participantId">
+                                    <tr> <td x-text="participantData.participantName"></td> <template x-for="actKey in Object.keys(activityDetails)" :key="actKey"> <td x-text="calculatePointsForActivity(actKey, participantData.participantId) || 0"></td> </template> <td class="font-semibold" x-text="participantData.totalPoints"></td> </tr>
+                                </template>
+                                <tr x-show="!competitionData || competitionData.length === 0"> <td :colspan="Object.keys(activityDetails).length + 2" class="text-center py-3" :style="{color: 'var(--theme-text-secondary)'}">هیچ بەشداربوویەک نییە.</td> </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Participants Section -->
+                <div x-data="participantManager()" x-show="activeTab === 'participants'" x-cloak>
+                     <div x-show="currentView === 'list'">
+                        <h2 class="section-title-refined">بەڕێوەبردنی بەشداربووان</h2>
+                        <div class="mb-4 flex flex-col md:flex-row justify-between items-center gap-3 section-controls">
+                            <div class="search-input-wrapper w-full md:w-1/3"> <input type="search" x-model="searchTerm" placeholder="گەڕان بەدوای بەشداربوو..." class="search-input"> <svg class="search-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg> </div>
+                            <button @click="showAddForm()" class="action-button-elegant w-full md:w-auto"> <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> زیادکردنی بەشداربووی نوێ </button>
+                        </div>
+                        <div class="table-container-mobile rounded-md border shadow-sm" :style="{ backgroundColor: 'var(--theme-bg-content)', borderColor: 'var(--theme-border-light)' }">
+                            <table class="styled-table">
+                                <thead> <tr><th>ناو</th><th class="actions">کارەکان</th></tr> </thead>
+                                <tbody>
+                                    <template x-for="participant in filteredParticipants" :key="participant.id">
+                                        <tr> <td x-text="participant.name"></td> <td class="actions"> <div class="table-actions"> <button @click="showEditForm(participant)" title="دەستکاری" class="edit"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></button> <button @click="confirmDeleteParticipant(participant.id, participant.name)" title="سڕینەوە" class="delete"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button> </div> </td> </tr>
+                                    </template>
+                                    <tr x-show="filteredParticipants.length === 0"><td colspan="2" class="text-center py-3" :style="{color: 'var(--theme-text-secondary)'}">هیچ بەشداربوویەک نەدۆزرایەوە.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div x-show="currentView === 'form'" class="form-container">
+                        <h2 class="section-title-refined" x-text="editingParticipant.id ? 'دەستکاریکردنی بەشداربوو: ' + editingParticipant.name : 'زیادکردنی بەشداربووی نوێ'"></h2>
+                        <form @submit.prevent="saveParticipant" class="space-y-4">
+                             <div><label for="participant-name" class="form-label">ناوی بەشداربوو</label><input type="text" id="participant-name" class="form-input" placeholder="ناوی سیانی..." x-model="editingParticipant.name" required></div>
+                            <div class="pt-2 flex justify-end space-x-2 space-x-reverse"> <button type="button" @click="showList()" class="modal-button modal-button-cancel">پاشگەزبوونەوە</button> <button type="submit" class="action-button-elegant"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg><span x-text="editingParticipant.id ? 'پاشەکەوتکردنی گۆڕانکاری' : 'تۆمارکردنی بەشداربوو'"></span></button> </div>
+                       </form>
+                    </div>
+                </div>
+
+                <!-- Book Management Section -->
+                <div x-data="bookManagementManager()" x-init="init()" x-show="activeTab === 'book_management'" x-cloak>
+                    <div x-show="currentView === 'list'">
+                        <h2 class="section-title-refined">بەڕێوەبردنی کتێبەکان</h2>
+                        <div class="mb-4 flex flex-col md:flex-row justify-between items-center gap-3 section-controls">
+                            <div class="search-input-wrapper w-full md:w-2/5">
+                                <input type="search" x-model="searchTerm" placeholder="گەڕان بەدوای کتێب یان نووسەر..." class="search-input">
+                                <svg class="search-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                            </div>
+                             <div class="flex items-center gap-2 flex-grow md:flex-grow-0">
+                                <label for="sortBooksBy" class="form-label !mb-0 shrink-0">ڕیزکردن بەپێی:</label>
+                                <select id="sortBooksBy" x-model="sortKey" class="form-select !w-auto !py-1.5">
+                                    <option value="title">ناوی کتێب</option>
+                                    <option value="author">ناوی نووسەر</option>
+                                    <option value="pagesRead">لاپەڕەی خوێندراوە (زۆرترین)</option>
+                                </select>
+                            </div>
+                            <button @click="showAddForm()" class="action-button-elegant w-full md:w-auto">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                زیادکردنی کتێبی نوێ
+                            </button>
+                        </div>
+                        <div class="table-container-mobile rounded-md border shadow-sm" :style="{ backgroundColor: 'var(--theme-bg-content)', borderColor: 'var(--theme-border-light)' }">
+                            <table class="styled-table">
+                                <thead>
+                                    <tr>
+                                        <th>ناوی کتێب</th>
+                                        <th>ناوی نووسەر</th>
+                                        <th class="pages-read-col">کۆی لاپەڕەی خوێندراوە</th>
+                                        <th class="actions">کارەکان</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="book in displayedBooks" :key="book.id">
+                                        <tr>
+                                            <td x-text="book.title"></td>
+                                            <td x-text="book.author"></td>
+                                            <td class="pages-read-col" x-text="book.totalPagesRead"></td>
+                                            <td class="actions">
+                                                <div class="table-actions">
+                                                    <button @click="showEditForm(book)" title="دەستکاری" class="edit"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></button>
+                                                    <button @click="confirmDeleteMasterBook(book.id, book.title)" title="سڕینەوە" class="delete"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="displayedBooks.length === 0">
+                                        <td colspan="4" class="text-center py-3" :style="{color: 'var(--theme-text-secondary)'}">هیچ کتێبێک نەدۆزرایەوە یان تۆمار نەکراوە.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div x-show="currentView === 'form'" class="form-container">
+                        <h2 class="section-title-refined" x-text="editingBook.id ? 'دەستکاریکردنی کتێب: ' + editingBook.originalTitle : 'زیادکردنی کتێبی نوێ'"></h2>
+                        <form @submit.prevent="saveMasterBook" class="space-y-4">
+                            <div><label for="master-book-title" class="form-label">ناوی کتێب</label><input type="text" id="master-book-title" class="form-input" placeholder="ناوی کتێب..." x-model="editingBook.title" required></div>
+                            <div><label for="master-book-author" class="form-label">ناوی نووسەر</label><input type="text" id="master-book-author" class="form-input" placeholder="ناوی نووسەر..." x-model="editingBook.author" required></div>
+                            <div class="pt-2 flex justify-end space-x-2 space-x-reverse"><button type="button" @click="showList()" class="modal-button modal-button-cancel">پاشگەزبوونەوە</button><button type="submit" class="action-button-elegant"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg><span x-text="editingBook.id ? 'پاشەکەوتکردنی گۆڕانکاری' : 'تۆمارکردنی کتێب'"></span></button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Book Category Points Section -->
+                <div x-data="bookCategoryPointsManager()" x-init="init()" x-show="activeTab === 'book_category_points'" x-cloak>
+                    <h2 class="section-title-refined">گۆڕینی پۆینتی پۆلەکانی کتێب</h2>
+                    <div class="form-container">
+                        <form @submit.prevent="saveCategoryPoints()" class="space-y-4">
+                            <template x-for="(categoryConfig, categoryKey) in bookCategories" :key="categoryKey">
+                                <div class="grid grid-cols-1 md:grid-cols-7 gap-x-4 gap-y-2 items-center py-2 border-b" :style="{borderColor: 'var(--theme-border-light)'}">
+                                    <label :for="'points-' + categoryKey" class="form-label md:col-span-4 !mb-0 self-center" x-text="categoryConfig.name"></label>
+                                    <div class="md:col-span-2"><input type="number" :id="'points-' + categoryKey" class="form-input !py-1.5 w-full" x-model.number="editablePoints[categoryKey]" min="0" step="0.01" required></div>
+                                    <span class="md:col-span-1 text-sm self-center" :style="{color: 'var(--theme-text-secondary)'}">خاڵ/لاپەڕە</span>
+                                </div>
+                            </template>
+                            <div class="pt-4 flex justify-end">
+                                <button type="submit" class="action-button-elegant"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 00-.12-1.03l-2.268-9.64a3.375 3.375 0 00-3.285-2.602H7.923a3.375 3.375 0 00-3.285 2.602l-2.268 9.64a4.5 4.5 0 00-.12 1.03v.228m19.5 0a3 3 0 01-3 3H5.25a3 3 0 01-3-3m19.5 0a3 3 0 00-3-3H5.25a3 3 0 00-3 3m16.5 0h.008v.008h-.008v-.008zm-3 0h.008v.008h-.008v-.008z" /></svg>پاشەکەوتکردنی گۆڕانکاریەکان</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Final Results Summary Section -->
+                <div x-data="finalResultsManager()" x-show="activeTab === 'final_results_summary'" x-cloak>
+                    <h2 class="section-title-refined">کۆی گشتی ئەنجامەکان (بڕ)</h2>
+                    <div class="table-container-mobile rounded-md border shadow-sm mb-6" :style="{ backgroundColor: 'var(--theme-bg-content)', borderColor: 'var(--theme-border-light)' }">
+                        <table class="styled-table">
+                            <thead><tr><th>ناوی چالاکی</th><th>کۆی گشتی ئەنجام (بڕ)</th><th>یەکە</th></tr></thead>
+                            <tbody>
+                                <template x-for="summary in overallSummary" :key="summary.key">
+                                    <tr><td x-text="summary.name"></td><td x-text="summary.totalValue"></td><td x-text="summary.unit"></td></tr>
+                                </template>
+                                 <tr x-show="overallSummary.length === 0"><td colspan="3" class="text-center py-3" :style="{color: 'var(--theme-text-secondary)'}">هێشتا هیچ داتایەک تۆمار نەکراوە.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3 class="activity-title mt-8">زۆرترین ئەنجامدەری چالاکییەکان</h3>
+                    <div class="table-container-mobile rounded-md border shadow-sm" :style="{ backgroundColor: 'var(--theme-bg-content)', borderColor: 'var(--theme-border-light)' }">
+                         <table class="styled-table">
+                             <thead><tr><th>ناوی چالاکی</th><th>زۆرترین ئەنجامدەر</th><th>ئەنجام</th><th>یەکە</th></tr></thead>
+                             <tbody>
+                                 <template x-for="item in topPerformersSummary" :key="item.key">
+                                     <tr><td x-text="item.activityName"></td><td x-text="item.topPerformer ? item.topPerformer.name : '-'"></td><td x-text="item.topPerformer ? item.topPerformer.result : '-'"></td><td x-text="item.topPerformer ? (item.unitSingular || item.unit) : '-'"></td></tr>
+                                 </template>
+                                 <tr x-show="topPerformersSummary.every(item => !item.topPerformer || item.topPerformer.result === 0)">
+                                     <td colspan="4" class="text-center py-3" :style="{color: 'var(--theme-text-secondary)'}">هێشتا هیچ داتایەک بۆ چالاکییەکان تۆمار نەکراوە بۆ پیشاندانی زۆرترین ئەنجام.</td>
+                                 </tr>
+                             </tbody>
+                         </table>
+                    </div>
+                </div>
+
+                <!-- Activity Sections -->
+                <template x-for="activityKey in Object.keys(activityDetails)" :key="activityKey">
+                    <div x-data="activityManager(activityKey)" x-show="activeTab === 'activity_' + activityKey" x-cloak>
+                        <h2 class="activity-title" x-text="`بەڕێوەبردنی چالاکی: ${currentActivityDetails.nameKurdish}`"></h2>
+                        <template x-if="activityKey !== 'reading'">
+                            <form @submit.prevent="savePointsPerUnit" class="points-config-form flex items-center gap-3 flex-wrap">
+                                <div class="flex-grow sm:flex-grow-0"> <label :for="`points_for_${activityKey}`" class="form-label !mb-1" x-text="`خاڵ بۆ هەر ${currentActivityDetails.unitSingular || currentActivityDetails.unit}`"></label> <input type="number" :id="`points_for_${activityKey}`" class="form-input !py-1.5" x-model.number="pointsPerUnitInput" min="0" step="any" required> </div>
+                                <button type="submit" class="action-button-elegant !py-1.5 !px-4 self-end">پاشەکەوتکردنی خاڵ</button>
+                            </form>
+                        </template>
+                        
+                        <div class="table-container-mobile rounded-md border shadow-sm" :style="{ backgroundColor: 'var(--theme-bg-content)', borderColor: 'var(--theme-border-light)' }">
+                            <!-- کۆدی نوێ -->
+<table class="styled-table">
+    <thead>
+        <tr>
+            <th>ناوی بەشداربوو</th>
+            <th class="value-col" x-text="activityKey === 'reading' ? `کۆی گشتی لاپەڕە` : `ئەنجامی کۆتایی (${currentActivityDetails.unit})`"></th>
+            <th class="points-col">ئەنجامی کۆتایی (پۆینت)</th>
+            <th class="actions">کارەکان</th>
+        </tr>
+    </thead>
+    <tbody>
+        <template x-for="pData in participantsWithActivityData" :key="pData.id">
+            <tr>
+                <td x-text="pData.name"></td>
+                <td class="value-col" x-text="pData.calculatedResult"></td>
+                <td class="points-col" x-text="calculatePoints(pData.id, activityKey)"></td>
+                <td class="actions">
+                    <div class="table-actions">
+                        <button @click="openDailyEntryModal(pData)" title="دەستکاریکردنی زانیاری ڕۆژانە" class="edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        </template>
+        <!-- ... -->
+    </tbody>
+</table>
+                        </div>
+                        <template x-if="activityKey !== 'reading'">
+                            <div x-show="isDailyEntryModalOpen" x-transition class="modal-backdrop">
+                                <div @click.away="closeModal" class="modal-content modal-lg">
+                                    <h3 class="modal-title" x-text="`تۆمارکردنی زانیاری ڕۆژانە بۆ ${getParticipantNameById(editingParticipantId)} - ${currentActivityDetails.nameKurdish}`"></h3>
+                                    <form @submit.prevent="saveDailyEntries()">
+                                        <div class="daily-entries-grid">
+                                            <template x-for="i in 15" :key="i">
+                                                <div class="daily-entry-item"><label :for="`${activityKey}_day_${i}`" x-text="`ڕۆژی ${i}`"></label><input type="number" :id="`${activityKey}_day_${i}`" x-model.number="currentDailyEntries[i-1]" min="0" :max="getMaxForDailyEntry(activityKey)"></div>
+                                            </template>
+                                        </div>
+                                        <div class="modal-footer"> <button type="button" @click="closeModal" class="modal-button modal-button-cancel">پاشگەزبوونەوە</button> <button type="submit" class="action-button-elegant">پاشەکەوتکردن</button> </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="activityKey === 'reading'">
+                            <div x-show="isBookModalOpen" x-transition class="modal-backdrop">
+                                <div @click.away="closeBookModal" class="modal-content modal-lg">
+                                    <h3 class="modal-title" x-text="editingBookEntryIndex === null ? `تۆمارکردنی کتێبی خوێندراوە بۆ ${getParticipantNameById(editingBookParticipantId)}` : `دەستکاریکردنی تۆماری کتێب بۆ ${getParticipantNameById(editingBookParticipantId)}`"></h3>
+                                    <form @submit.prevent="addOrUpdateBookEntry" class="p-3 border rounded mb-4 space-y-3" :style="{borderColor: 'var(--theme-border-light)'}">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                                            <div><label for="book_day_modal" class="form-label">ڕۆژ (١-١٥)</label><input type="number" id="book_day_modal" class="form-input" x-model.number="newBookEntry.day" min="1" max="15" required></div>
+                                            <div><label for="book_category_modal" class="form-label">پۆلی کتێب</label><select id="book_category_modal" class="form-select" x-model="newBookEntry.categoryKey" required><option value="">پۆل هەڵبژێرە...</option><template x-for="(cat, key_cat) in bookCategories" :key="key_cat"><option :value="key_cat" x-text="cat.name"></option></template></select></div>
+                                             <div class="md:col-span-1"><label for="book_title_modal" class="form-label">ناوی کتێب</label><div class="relative"><input type="text" id="book_title_modal" class="form-input" x-model="newBookEntry.bookTitle" @input.debounce.300ms="updateBookSuggestions($event.target.value)" @focus="showSuggestions = true; updateBookSuggestions(newBookEntry.bookTitle)" @blur="setTimeout(() => showSuggestions = false, 200)" placeholder="ناوی کتێب..." required autocomplete="off"><div x-show="showSuggestions && bookSuggestions.length > 0" class="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-auto" :style="{backgroundColor: 'var(--theme-input-bg)', borderColor: 'var(--theme-input-border)'}"><template x-for="suggestion in bookSuggestions" :key="suggestion.id"><div @mousedown.prevent="selectBookSuggestion(suggestion)" class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" :style="{color: 'var(--theme-input-text)'}" @mouseenter="$el.style.backgroundColor = 'var(--theme-table-row-hover-bg)'" @mouseleave="$el.style.backgroundColor = 'var(--theme-input-bg)'"><strong x-text="suggestion.title"></strong> - <span class="text-xs opacity-75" x-text="suggestion.author"></span></div></template></div></div></div>
+                                            <div><label for="book_pages_modal" class="form-label">ژمارەی لاپەڕە</label><input type="number" id="book_pages_modal" class="form-input" x-model.number="newBookEntry.pagesRead" min="1" required></div>
+                                        </div>
+                                        <div class="flex flex-col sm:flex-row gap-2 pt-2"><button type="submit" class="action-button-elegant flex-grow !py-2" x-text="editingBookEntryIndex === null ? 'زیادکردنی کتێب' : 'پاشەکەوتکردنی گۆڕانکاری'"></button><button type="button" x-show="editingBookEntryIndex !== null" @click="cancelEditBookEntry" class="modal-button modal-button-cancel flex-grow !py-2">لابردنی دەستکاری</button></div>
+                                    </form>
+                                    <h4 class="text-sm font-semibold mb-2" :style="{color: 'var(--theme-text-secondary)'}">کتێبە تۆمارکراوەکان:</h4>
+                                    <div class="max-h-60 overflow-y-auto">
+                                        <template x-for="(entry, index) in sortedBookLog" :key="entry.id">
+                                            <div class="book-log-item"><div class="info"><span class="block font-medium" x-text="entry.bookTitle || 'بێناو'"></span><span class="text-xs" :style="{color: 'var(--theme-text-secondary)'}" x-text="`ڕۆژی ${entry.day} - ${bookCategories[entry.categoryKey]?.name || 'پۆلی نەناسراو'} - ${entry.pagesRead} لاپەڕە`"></span></div><div class="actions"><button @click="prepareEditBookEntry(entry.id)" class="action-btn edit" title="دەستکاری"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></button><button @click="confirmRemoveBookEntry(entry.id)" class="action-btn delete" title="سڕینەوە"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button></div></div>
+                                        </template>
+                                        <p x-show="currentBookLog.length === 0" class="text-center text-sm py-3" :style="{color: 'var(--theme-text-secondary)'}">هێشتا هیچ کتێبێک بۆ ئەم بەشداربووە تۆمار نەکراوە.</p>
+                                    </div>
+                                    <div class="modal-footer mt-4"> <button type="button" @click="closeBookModal" class="modal-button modal-button-cancel">داخستن و پاشەکەوت</button> </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Developer Section -->
+                <div x-show="activeTab === 'developer'" x-cloak class="py-6 px-4 md:px-6">
+                    <h2 class="section-title-refined text-center mb-8">دەربارەی گەشەپێدەر</h2>
+                    <div class="form-container max-w-md mx-auto text-center p-6 md:p-8">
+                        <div style=" padding: 5px; border: 2px solid var(--theme-poet-frame-border); background: linear-gradient(145deg, var(--theme-poet-frame-bg-start), var(--theme-poet-frame-bg-end)); box-shadow: 0 0 0 3px var(--theme-bg-content), 0 5px 15px rgba(0,0,0,0.1); border-radius: 50%; width: 120px; height: 120px; margin: 0 auto 1.25rem auto; ">
+                             <img src="https://i.pinimg.com/280x280_RS/8d/a3/e2/8da3e2a5a5b721a8d90887467f40ccd3.jpg" alt="وێنەی گەشەپێدەر" class="user-image" style="border-width: 1px; border-color: var(--theme-poet-image-border);">
+                        </div>
+                        <h3 class="text-xl font-semibold mb-1.5" :style="{color: 'var(--theme-poet-name-text)'}">Aland Wasim</h3>
+                        <p class="text-base mb-2.5" :style="{color: 'var(--theme-text-primary)'}"> گەشەپێدەری وێب و دیزاینەر </p>
+                        <p class="text-sm leading-relaxed mb-4" :style="{color: 'var(--theme-text-secondary)'}"> ئەم وێبە بۆ ئاسانکاری بەڕێوەبردنی پێشبڕکێی پڕۆگرام ئامادەکراوە. بە پشتیوانی خـــــودا پەرەی پێدراوە و خراوەتە بەردەست. <br> هیوادارم ببێتە مایەی سوود و قبوڵبوون لای خوای گەورە. <br> و بەهیوای سوود و ئاسانکاری بۆ <strong>پـــــــــــــــڕۆگرام</strong> </p>
+                        <div class="mt-5 pt-3 border-t" :style="{borderColor: 'var(--theme-border-light)'}">
+                            <p class="text-xs mb-2" :style="{color: 'var(--theme-text-secondary)'}">بۆ هەر پێشنیار، گلەیی یان کێشەیەک:</p>
+                            <a href="https://aland-cv.vercel.app/" target="_blank" class="inline-flex items-center justify-center text-sm py-1.5 px-4 rounded-md transition-colors duration-200 ease-in-out" :style="{ backgroundColor: 'var(--theme-button-secondary-bg)', color: 'var(--theme-button-secondary-text)', border: '1px solid var(--theme-border-medium)' }" @mouseenter="$el.style.backgroundColor = 'var(--theme-button-secondary-hover-bg)'" @mouseleave="$el.style.backgroundColor = 'var(--theme-button-secondary-bg)'"> <span>پەیوەندی بکە</span> </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modals (Confirmation & Toast) -->
+                <div x-data x-show="isConfirmOpen" x-transition class="modal-backdrop" x-cloak>
+                    <div @click.away="cancelConfirm()" class="modal-content max-w-sm"> <h3 class="modal-title"><svg class="w-12 h-12 text-red-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.008v.008H12v-.008z" /></svg>دڵنیاکردنەوەی سڕینەوە</h3> <p class="modal-body" x-text="confirmMessage"></p> <div class="modal-footer"> <button @click="cancelConfirm()" class="modal-button modal-button-cancel">نەخێر</button> <button @click="executeConfirm()" class="modal-button modal-button-confirm">بەڵێ، بیسڕەوە</button> </div> </div>
+                </div>
+                <div x-data x-show="isToastVisible" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform translate-y-2" class="toast-notification" :class="{ 'success': toastType === 'success', 'error': toastType === 'error', 'warning': toastType === 'warning'}" x-cloak> <svg x-show="toastType === 'success'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> <svg x-show="toastType === 'error'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg> <svg x-show="toastType === 'warning'" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.008v.008H12v-.008z" /></svg> <span x-text="toastMessage"></span> </div>
+            
+            </main>
+        </div>
+    </div>
+    
+    <!-- JavaScript Link -->
+    <script src="script.js"></script>
+
+</body>
+</html>
